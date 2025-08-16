@@ -3,7 +3,7 @@ from .atr_band import ATRBandStrategy
 from .bollinger_band import BollingerBandsStrategy
 from .buy_and_hold import BuyAndHoldStrategy
 from .bollinger_band import BollingerBandsStrategy
-from .finrl import FinRLStrategy
+# from .finrl import FinRLStrategy  # 暂时注释，避免导入错误
 from .sma_crossover import SMACrossStrategy
 from .trend_following import TrendFollowingStrategy
 from .turn_of_the_month import TurnOfTheMonthStrategy

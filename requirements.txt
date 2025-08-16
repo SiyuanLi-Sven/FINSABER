@@ -34,7 +34,6 @@ pandas_market_calendars==5.1.0
 pandas_ta==0.3.14b0
 polars==1.31.0
 polygon==1.2.6
-psutil==6.1.1
 psutil==7.0.0
 pwb_toolbox==0.1.1
 pydantic==2.11.7

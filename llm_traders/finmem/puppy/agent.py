@@ -7,7 +7,7 @@ from .run_type import RunMode
 from .memorydb import BrainDB
 from .portfolio import Portfolio
 from abc import ABC, abstractmethod
-from .chat import ChatOpenAICompatible
+from .unified_chat import UnifiedChatClient, ChatOpenAICompatible
 from .environment import market_info_type
 from typing import Dict, Union, Any, List
 from .reflection import trading_reflection
@@ -139,19 +139,41 @@ class LLMAgent(Agent):
         self.max_token_mid = chat_config.get("max_token_mid", None)
         self.max_token_long = chat_config.get("max_token_long", None)
         self.max_token_reflection = chat_config.get("max_token_reflection", None)
-        del chat_config["end_point"]
-        del chat_config["model"]
-        del chat_config["system_message"]
+        
+        # 移除旧的配置项（如果存在）
+        chat_config.pop("end_point", None)
+        chat_config.pop("model", None) 
+        chat_config.pop("system_message", None)
+        
         if self.max_token_short:
-            self.truncator = TextTruncator(
-                tokenization_model_name=chat_config["tokenization_model_name"]
+            tokenization_model = chat_config.get("tokenization_model_name", model)
+            self.truncator = TextTruncator(tokenization_model_name=tokenization_model)
+            
+        # 使用新的统一聊天客户端
+        try:
+            # 优先使用config.py中的模型配置
+            self.chat_client = UnifiedChatClient(
+                model_name=model,
+                system_message=system_message,
+                **chat_config
             )
-        self.guardrail_endpoint = ChatOpenAICompatible(
-            end_point=end_point,
-            model=model,
-            system_message=system_message,
-            other_parameters=chat_config,
-        ).guardrail_endpoint()
+            # 为了向后兼容，创建guardrail_endpoint函数
+            def guardrail_func(input_text: str, **kwargs) -> str:
+                return self.chat_client.guardrail_chat(input_text, require_json=True, **kwargs)
+            self.guardrail_endpoint = guardrail_func
+            
+            logging.info(f"使用新的UnifiedChatClient，模型: {model}")
+            
+        except Exception as e:
+            # 如果新客户端失败，回退到旧的实现
+            logging.warning(f"新客户端初始化失败，回退到兼容模式: {e}")
+            self.guardrail_endpoint = ChatOpenAICompatible(
+                end_point=end_point,
+                model=model,
+                system_message=system_message,
+                other_parameters=chat_config,
+            ).guardrail_endpoint()
+            self.chat_client = None
         # records
         self.reflection_result_series_dict = {}
         self.access_counter = {}

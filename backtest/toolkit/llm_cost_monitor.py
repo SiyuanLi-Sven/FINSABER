@@ -9,6 +9,9 @@ OPENAI_PRICE = {
     },
 }
 
+# 全局成本变量
+llm_cost = 0
+
 def reset_llm_cost():
     global llm_cost
     llm_cost = 0
@@ -55,5 +58,16 @@ def add_openai_cost_from_tokens_count(model, prompt_tokens, generated_tokens):
     else:
         cost = 0
 
+    llm_cost += cost
+    return cost
+
+def add_llm_cost(cost: float):
+    """
+    通用的LLM成本添加函数，用于统一LLM客户端
+    
+    Args:
+        cost: API调用成本（美元）
+    """
+    global llm_cost
     llm_cost += cost
     return cost
